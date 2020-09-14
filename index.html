@@ -24,18 +24,19 @@ import {WebXRButton} from './js/util/webxr-button.js';
 import { OrbitControls } from '../dev/three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from '../dev/three/examples/jsm/loaders/GLTFLoader.js';
 
+
+
 let container;
 let camera;
 let controls;
 let renderer;
 
-let scene;
+let scene, clock, mouse, raycaster;
 
 const mixers = [];
-const clock = new THREE.Clock();
-var raycaster = new THREE.Raycaster();
 
-var mouse = new THREE.Vector2();
+//add flwers into array to be placed later...
+let flowers  = [];
 
 function init() {
 
@@ -43,6 +44,10 @@ function init() {
 
   scene = new THREE.Scene();
   scene.background = new THREE.Color( 0x000000 );
+  raycaster = new THREE.Raycaster();
+  clock = new THREE.Clock();
+
+  mouse = new THREE.Vector2();
 
   createCamera();
   //createControls();
@@ -58,7 +63,6 @@ function init() {
   } );
 
 
-  var vec = raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0)));
 
 }
 
@@ -66,8 +70,8 @@ function createCamera() {
 
   camera = new THREE.PerspectiveCamera( 65, container.clientWidth / container.clientHeight, .1, 100 );
   
-  camera.position.set( 0.25, .2, 1.25 );
-  camera.updateProjectionMatrix();
+  camera.position.set( 0, 0.1, 0 );
+  //camera.updateProjectionMatrix();
 }
 
 
@@ -129,25 +133,34 @@ function loadModels() {
 
   const flower5Position = new THREE.Vector3( 0, 0, .40 );
   loader.load( './models/flowers/flower5.glb', gltf => onLoad( gltf, flower5Position ), onProgress, onError );
+ // flowers.push(gltf)
+}
+
+
+function onMouseMove( event ) {
+
+	// calculate mouse position in normalized device coordinates
+	// (-1 to +1) for both components
+
+	mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+	mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 
 }
 
 
-function addFlowersOnClick(){
-	console.log("click");
-	
- 	mouse.x = ( event.clientX / renderer.domElement.width ) * 2 - 1;
-    mouse.y = - ( event.clientY / renderer.domElement.height ) * 2 + 1;
-    raycaster.setFromCamera( mouse, camera );
-    mouse.position.x=vec.x; 
-	mouse.position.y=vec.y; 
-	mouse.position.z=vec.z;
-
-    flower1Position = (vec.x,vec.y,vec.z);
-    console.log(mouse.x+" "+mouse.y);
-}
 function createRenderer() {
 
+	// update the picking ray with the camera and mouse position
+	raycaster.setFromCamera( mouse, camera );
+
+	// calculate objects intersecting the picking ray
+	var intersects = raycaster.intersectObjects( scene.children );
+
+	for ( var i = 0; i < intersects.length; i++ ) {
+
+		intersects[ i ].object.material.color.set( 0xff0000 );
+
+	}
 
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
   renderer.outputEncoding = THREE.GammaEncoding
@@ -192,6 +205,7 @@ function onWindowResize() {
 }
 
 window.addEventListener( 'resize', onWindowResize );
+window.addEventListener( 'mousemove', onMouseMove, false );
 
 init();
 
