@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1, user-scalable=no'>
+    <meta name='mobile-web-app-capable' content='yes'>
+    <meta name='apple-mobile-web-app-capable' content='yes'>
+    <!--link rel='stylesheet' href='https://jasonhendrik.com/argarden/css/gardenstyle.css'-->
+	<title>PLANT SOME FLOWERS!</title>
+</head>
+<style> 
+	body { margin: 0;}
+	canvas {width: 100%; height:100%; }
+</style>
+<body>
+	<div id="scene-container">
+			<!-- This div will hold our scene-->
+		</div>
+
+ 	<script type="module">
+	
+import * as THREE from '../dev/three/build/three.module.js';
+import {WebXRButton} from './js/util/webxr-button.js';
+import { OrbitControls } from '../dev/three/examples/jsm/controls/OrbitControls.js';
+import { GLTFLoader } from '../dev/three/examples/jsm/loaders/GLTFLoader.js';
+
+let container;
+let camera;
+let controls;
+let renderer;
+
+let scene;
+
+const mixers = [];
+const clock = new THREE.Clock();
+var raycaster = new THREE.Raycaster();
+
+var mouse = new THREE.Vector2();
+
+function init() {
+
+  container = document.querySelector( '#scene-container' );
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color( 0x000000 );
+
+  createCamera();
+  //createControls();
+  createLights();
+  loadModels();
+  createRenderer();
+
+  renderer.setAnimationLoop( () => {
+
+    update();
+    render();
+
+  } );
+
+
+  var vec = raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0)));
+
+}
+
+function createCamera() {
+
+  camera = new THREE.PerspectiveCamera( 65, container.clientWidth / container.clientHeight, .1, 100 );
+  
+  camera.position.set( 0.25, .2, 1.25 );
+  camera.updateProjectionMatrix();
+}
+
+
+function createControls() {
+  controls = new OrbitControls( camera, container );
+}
+
+function createLights() {
+  const ambientLight = new THREE.HemisphereLight( 0xddeeff, 0x0f0e0d, 3 );
+  const mainLight = new THREE.DirectionalLight( 0xffffff, 3 );
+  mainLight.position.set( 1, 2, 3 );
+  scene.add( ambientLight, mainLight );
+
+}
+
+function loadModels() {
+
+  const loader = new GLTFLoader();
+
+  // A reusable function to set up the models. We're passing in a position parameter
+  // so that they can be individually placed around the scene
+  const onLoad = ( gltf, position ) => {
+
+    const model = gltf.scene.children[ 0 ];
+    model.position.copy( position );
+
+    //const animation = gltf.animations[ 0 ];
+
+    //const mixer = new THREE.AnimationMixer( model );
+    //mixers.push( mixer );
+
+    //const action = mixer.clipAction( animation );
+    //action.play();
+
+    scene.add( model );
+
+  };
+
+  // the loader will report the loading progress to this function
+  const onProgress = () => {};
+
+  // the loader will send any error messages to this function, and we'll log
+  // them to to console
+  const onError = ( errorMessage ) => { console.log( errorMessage ); };
+
+  // load the first model. Each model is loaded asynchronously,
+  // so don't make any assumption about which one will finish loading first
+  const flower1Position = new THREE.Vector3( 0, 0, 0 );
+  loader.load( './models/flowers/flower1.glb', gltf => onLoad( gltf, flower1Position ), onProgress, onError );
+
+  const flower2Position = new THREE.Vector3( 0, 0, .10 );
+  loader.load( './models/flowers/flower2.glb', gltf => onLoad( gltf, flower2Position ), onProgress, onError );
+
+  const flower3Position = new THREE.Vector3( 0, 0, .20 );
+  loader.load( './models/flowers/flower3.glb', gltf => onLoad( gltf, flower3Position ), onProgress, onError );
+
+  const flower4Position = new THREE.Vector3( 0, 0, .30 );
+  loader.load( './models/flowers/flower4.glb', gltf => onLoad( gltf, flower4Position ), onProgress, onError );
+
+  const flower5Position = new THREE.Vector3( 0, 0, .40 );
+  loader.load( './models/flowers/flower5.glb', gltf => onLoad( gltf, flower5Position ), onProgress, onError );
+
+}
+
+
+function addFlowersOnClick(){
+	console.log("click");
+	
+ 	mouse.x = ( event.clientX / renderer.domElement.width ) * 2 - 1;
+    mouse.y = - ( event.clientY / renderer.domElement.height ) * 2 + 1;
+    raycaster.setFromCamera( mouse, camera );
+    mouse.position.x=vec.x; 
+	mouse.position.y=vec.y; 
+	mouse.position.z=vec.z;
+
+    flower1Position = (vec.x,vec.y,vec.z);
+    console.log(mouse.x+" "+mouse.y);
+}
+function createRenderer() {
+
+
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+  renderer.outputEncoding = THREE.GammaEncoding
+  renderer.gammaFactor = 2.2 
+  //renderer.setPixelRatio(window.devicePixelRatio)
+  renderer.setSize(window.innerWidth, window.innerHeight)
+  renderer.shadowMap.enabled = true
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap
+  renderer.physicallyCorrectLights = true;
+
+  container.appendChild( renderer.domElement );
+
+}
+
+function update() {
+
+  const delta = clock.getDelta();
+
+  for ( const mixer of mixers ) {
+
+    mixer.update( delta );
+
+  }
+
+}
+
+function render() {
+
+  renderer.render( scene, camera );
+
+}
+
+function onWindowResize() {
+
+  camera.aspect = container.clientWidth / container.clientHeight;
+
+  // update the camera's frustum
+  camera.updateProjectionMatrix();
+
+  renderer.setSize( container.clientWidth, container.clientHeight );
+
+}
+
+window.addEventListener( 'resize', onWindowResize );
+
+init();
+
+
+	</script>
+</body>
+</html>
